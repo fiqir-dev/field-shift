@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIELD SHIFT — AI + NASA Data for Smarter Farming</title>
+
+<!-- 3D Globe -->
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script src="https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
+
+<style>
+:root{
+  --bg:#020814;
+  --panel:#071525;
+  --panel2:#0a1c2d;
+  --green:#35e59a;
+  --cyan:#43c9ff;
+  --text:#f4f8fb;
+  --muted:#91a6b7;
+  --line:rgba(93,180,220,.20);
+  --danger:#ff6565;
+  --warning:#f6b84b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  overflow-x:hidden;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-3;
+  background:
+    radial-gradient(circle at 72% 20%,rgba(31,119,180,.16),transparent 32%),
+    radial-gradient(circle at 18% 70%,rgba(35,229,154,.06),transparent 30%),
+    #020814;
+}
+body:after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  pointer-events:none;
+  opacity:.28;
+  background-image:
+    radial-gradient(circle,#fff 1px,transparent 1px),
+    radial-gradient(circle,#8bcfff .7px,transparent .7px);
+  background-size:130px 130px,190px 190px;
+  background-position:10px 20px,80px 60px;
+}
+
+/* NAV */
+.navbar{
+  height:66px;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:100;
+  background:rgba(2,8,20,.78);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  backdrop-filter:blur(18px);
+}
+.nav-inner{
+  max-width:1180px;
+  height:100%;
+  margin:auto;
+  padding:0 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  text-decoration:none;
+  color:#fff;
+}
+.logo-mark{
+  width:34px;height:34px;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,#32e39a,#18a978);
+  box-shadow:0 0 24px rgba(53,229,154,.28);
+  overflow:hidden;
+}
+.logo-mark img{
+  width:100%;height:100%;object-fit:contain;
+}
+.logo-leaf{
+  width:19px;height:19px;
+  background:#03140d;
+  border-radius:100% 0 100% 0;
+  transform:rotate(-35deg);
+}
+.logo-text strong{
+  display:block;
+  font-size:15px;
+  letter-spacing:2px;
+}
+.logo-text span{
+  display:block;
+  color:#7f94a5;
+  font-size:9px;
+  margin-top:2px;
+}
+.nav-links{
+  display:flex;
+  gap:29px;
+  list-style:none;
+}
+.nav-links a{
+  color:#b8c8d4;
+  text-decoration:none;
+  font-size:12px;
+}
+.nav-links a:hover,.nav-links a.active{color:var(--green)}
+.nav-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.theme{
+  color:#d5e2eb;
+  font-size:15px;
+}
+.signin{
+  color:#dce9ef;
+  border:1px solid rgba(53,229,154,.45);
+  padding:8px 17px;
+  border-radius:20px;
+  text-decoration:none;
+  font-size:11px;
+}
+.get-started{
+  color:#03140d;
+  background:var(--green);
+  padding:9px 17px;
+  border-radius:20px;
+  text-decoration:none;
+  font-size:11px;
+  font-weight:800;
+}
+
+/* HERO */
+.hero{
+  min-height:680px;
+  position:relative;
+  padding-top:66px;
+  overflow:hidden;
+}
+.hero-inner{
+  max-width:1180px;
+  min-height:614px;
+  margin:auto;
+  padding:55px 24px 40px;
+  position:relative;
+  z-index:4;
+}
+.hero-copy{
+  width:43%;
+  position:relative;
+  z-index:10;
+}
+.hero h1{
+  font-size:clamp(45px,5vw,69px);
+  line-height:1.02;
+  letter-spacing:-3px;
+  margin-bottom:15px;
+}
+.hero h1 .green{color:var(--green)}
+.hero h2{
+  font-size:28px;
+  line-height:1.14;
+  margin-bottom:17px;
+  font-weight:750;
+}
+.hero p{
+  color:#9db0bf;
+  font-size:13px;
+  line-height:1.7;
+  max-width:430px;
+}
+.hero-buttons{
+  display:flex;
+  gap:10px;
+  margin-top:23px;
+}
+.btn{
+  padding:12px 18px;
+  border-radius:22px;
+  text-decoration:none;
+  font-size:11px;
+  font-weight:800;
+}
+.btn-primary{
+  color:#03140d;
+  background:var(--green);
+  box-shadow:0 0 28px rgba(53,229,154,.17);
+}
+.btn-outline{
+  color:#e7f3f8;
+  border:1px solid rgba(72,200,255,.45);
+  background:rgba(2,12,22,.35);
+}
+.trust{
+  margin-top:28px;
+  display:flex;
+  align-items:center;
+  gap:17px;
+  color:#748b9c;
+  font-size:9px;
+}
+.nasa-badge{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.nasa-circle{
+  width:25px;height:25px;border-radius:50%;
+  border:1px solid #3671c7;
+  display:grid;place-items:center;
+  font-size:7px;
+  color:#6ea4ff;
+}
+
+#globe{
+  position:absolute;
+  width:70%;
+  height:610px;
+  right:-5%;
+  top:35px;
+  z-index:2;
+}
+.globe-fade{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,var(--bg) 0%,rgba(2,8,20,.92) 8%,transparent 35%),
+    linear-gradient(0deg,var(--bg) 0%,transparent 30%,transparent 90%,var(--bg) 100%);
+}
+.glow{
+  position:absolute;
+  width:520px;height:520px;
+  right:10%;
+  top:110px;
+  border-radius:50%;
+  background:rgba(24,179,255,.08);
+  filter:blur(70px);
+  z-index:1;
+}
+
+/* SATELLITE */
+.satellite{
+  position:absolute;
+  right:5%;
+  top:25px;
+  width:210px;
+  height:120px;
+  z-index:8;
+  pointer-events:none;
+  transform:rotate(-8deg);
+}
+.sat-body{
+  position:absolute;
+  left:82px;top:35px;
+  width:48px;height:35px;
+  border-radius:8px;
+  background:linear-gradient(145deg,#d8e7ee,#506b7d);
+  border:1px solid #b4d3e2;
+  box-shadow:0 0 20px rgba(76,205,255,.3);
+}
+.sat-panel{
+  position:absolute;
+  width:74px;height:31px;
+  top:37px;
+  border:1px solid #68cfff;
+  background:
+    repeating-linear-gradient(90deg,rgba(82,195,255,.35) 0 7px,rgba(8,50,90,.7) 7px 9px);
+  box-shadow:0 0 15px rgba(67,201,255,.2);
+}
+.sat-panel.left{left:4px;transform:skewY(-9deg)}
+.sat-panel.right{right:3px;transform:skewY(9deg)}
+.sat-antenna{
+  position:absolute;
+  width:44px;height:44px;
+  border:2px solid #b8e8ff;
+  border-radius:50%;
+  right:40px;top:1px;
+  border-left-color:transparent;
+  border-bottom-color:transparent;
+}
+.sat-arm{
+  position:absolute;
+  width:43px;height:2px;
+  background:#c9e9f5;
+  left:45px;top:53px;
+}
+
+/* DATA FLOATING CARD */
+.data-card{
+  position:absolute;
+  right:31%;
+  top:115px;
+  z-index:10;
+  width:125px;
+  padding:12px;
+  border:1px solid rgba(67,201,255,.28);
+  background:rgba(4,17,29,.78);
+  border-radius:10px;
+  backdrop-filter:blur(14px);
+  box-shadow:0 15px 45px rgba(0,0,0,.25);
+  font-size:9px;
+}
+.data-card h4{
+  color:#dff7ff;
+  font-size:10px;
+  margin-bottom:7px;
+}
+.data-card div{
+  color:#93a9b7;
+  margin:5px 0;
+}
+.data-card i{
+  color:var(--green);
+  font-style:normal;
+  margin-right:4px;
+}
+
+/* ETHIOPIA TAG */
+.ethiopia-tag{
+  position:absolute;
+  right:25%;
+  top:280px;
+  z-index:12;
+  padding:7px 12px;
+  border:1px solid rgba(53,229,154,.35);
+  background:rgba(2,17,25,.72);
+  border-radius:20px;
+  color:#ccefe1;
+  font-size:10px;
+  backdrop-filter:blur(12px);
+}
+
+/* FEATURES */
+.section{
+  max-width:1180px;
+  margin:auto;
+  padding:30px 24px 34px;
+  position:relative;
+  z-index:20;
+}
+.feature-section{
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.feature-layout{
+  display:grid;
+  grid-template-columns:220px 1fr;
+  gap:28px;
+}
+.kicker{
+  color:var(--green);
+  font-size:8px;
+  letter-spacing:1.7px;
+  text-transform:uppercase;
+  font-weight:800;
+  margin-bottom:10px;
+}
+.feature-intro h2{
+  font-size:21px;
+  line-height:1.15;
+  margin-bottom:9px;
+}
+.feature-intro p{
+  color:#8196a6;
+  font-size:10px;
+  line-height:1.55;
+}
+.learn{
+  display:inline-block;
+  color:#d8edf4;
+  border:1px solid rgba(53,229,154,.45);
+  border-radius:18px;
+  padding:8px 13px;
+  margin-top:17px;
+  font-size:9px;
+  text-decoration:none;
+}
+.cards{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:12px;
+}
+.card{
+  min-height:218px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:linear-gradient(160deg,rgba(8,27,43,.9),rgba(4,16,29,.88));
+  overflow:hidden;
+  position:relative;
+}
+.card-top{
+  padding:13px 13px 8px;
+}
+.card-icon{
+  width:27px;height:27px;
+  border-radius:8px;
+  display:grid;
+  place-items:center;
+  background:rgba(53,229,154,.10);
+  border:1px solid rgba(53,229,154,.18);
+  color:var(--green);
+  margin-bottom:11px;
+  font-size:13px;
+}
+.card h3{
+  font-size:11px;
+  margin-bottom:7px;
+}
+.card p{
+  color:#8196a6;
+  font-size:8.5px;
+  line-height:1.45;
+}
+.card-visual{
+  position:absolute;
+  left:8px;right:8px;bottom:8px;
+  height:76px;
+  border-radius:7px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.06);
+}
+.card-visual.satellite{
+  position:absolute;
+  right:8px;top:auto;
+  width:auto;height:76px;
+  transform:none;
+  background:
+    linear-gradient(180deg,rgba(2,10,18,.1),rgba(2,10,18,.6)),
+    url("https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=500&q=75") center/cover;
+}
+.card-visual.plant{
+  background:
+    linear-gradient(180deg,rgba(0,40,25,.08),rgba(0,30,20,.45)),
+    url("https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=500&q=80") center/cover;
+}
+.card-visual.map{
+  background:
+    linear-gradient(180deg,rgba(0,20,30,.1),rgba(0,20,30,.35)),
+    url("https://images.unsplash.com/photo-1524666041070-9d87656c25f1?auto=format&fit=crop&w=500&q=80") center/cover;
+}
+.card-visual.leaf{
+  background:
+    linear-gradient(180deg,rgba(0,30,20,.08),rgba(0,30,20,.45)),
+    url("https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=500&q=80") center/cover;
+}
+.warning-box{
+  background:rgba(46,29,6,.75);
+  border:1px solid rgba(246,184,75,.3);
+  height:76px;
+  margin:0 8px 8px;
+  border-radius:7px;
+  padding:10px;
+  color:#f5dba1;
+  font-size:8px;
+}
+.warning-box strong{display:block;color:#ffd277;font-size:9px;margin-bottom:4px}
+.warning-box span{color:#b79b68;display:block;line-height:1.35}
+
+/* WHY ETHIOPIA */
+.why{
+  max-width:1180px;
+  margin:0 auto;
+  min-height:175px;
+  padding:20px 24px;
+  position:relative;
+  overflow:hidden;
+  background:
+    linear-gradient(90deg,rgba(3,12,20,.94),rgba(3,12,20,.54)),
+    url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=80") center/cover;
+  border-top:1px solid rgba(255,255,255,.05);
+}
+.why-content{
+  max-width:410px;
+}
+.why h2{
+  font-size:21px;
+  line-height:1.05;
+  margin-bottom:8px;
+}
+.why p{
+  color:#a2b0b9;
+  font-size:9px;
+  line-height:1.55;
+}
+.impact{
+  position:absolute;
+  right:9%;
+  bottom:35px;
+  display:flex;
+  gap:9px;
+}
+.impact-card{
+  width:125px;
+  padding:10px;
+  border:1px solid rgba(83,193,218,.2);
+  border-radius:8px;
+  background:rgba(4,17,29,.62);
+  backdrop-filter:blur(12px);
+}
+.impact-card b{font-size:8px;display:block}
+.impact-card span{font-size:7px;color:#8195a5}
+.quote{
+  position:absolute;
+  right:5%;
+  top:38px;
+  width:150px;
+  color:#b5c4ce;
+  font-size:8px;
+  line-height:1.5;
+  font-style:italic;
+}
+
+/* RESPONSIVE */
+@media(max-width:1050px){
+  .nav-links{display:none}
+  .hero-copy{width:50%}
+  #globe{width:68%;right:-9%}
+  .cards{grid-template-columns:repeat(3,1fr)}
+  .card:nth-child(4),.card:nth-child(5){display:none}
+}
+@media(max-width:760px){
+  .navbar{height:60px}
+  .nav-inner{padding:0 16px}
+  .nav-actions{gap:8px}
+  .theme{font-size:14px}
+  .get-started{padding:8px 12px;font-size:10px}
+
+  .hero{min-height:790px;padding-top:60px}
+  .hero-inner{min-height:730px;padding:34px 18px 0;text-align:center}
+  .hero-copy{width:100%;position:relative;z-index:12}
+  .hero h1{font-size:clamp(38px,11vw,50px);letter-spacing:-2px;margin-bottom:11px}
+  .hero h2{font-size:clamp(22px,6.5vw,29px);line-height:1.15;margin-bottom:12px}
+  .hero p{max-width:520px;margin:0 auto;font-size:12px;line-height:1.55}
+  .hero-buttons{justify-content:center;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .btn{padding:11px 15px;font-size:10px}
+  .trust{justify-content:center;flex-wrap:wrap;gap:10px;margin-top:17px;font-size:8px}
+
+  #globe{width:150%;height:530px;right:-25%;top:295px;opacity:.94;z-index:3}
+  .globe-fade{z-index:4;background:linear-gradient(180deg,var(--bg) 0%,rgba(2,8,20,.94) 18%,rgba(2,8,20,.12) 43%,transparent 67%,var(--bg) 100%)}
+  .satellite,.data-card,.ethiopia-tag{display:none}
+
+  .feature-section{padding-top:25px}
+  .feature-layout{grid-template-columns:1fr;gap:20px}
+  .feature-intro{max-width:560px}
+  .feature-intro h2{font-size:22px}
+  .feature-intro p{font-size:10px;max-width:500px}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .card{min-height:205px}
+  .card h3{font-size:10px}
+  .card p{font-size:8px}
+
+  .why{min-height:430px;padding:24px 18px}
+  .why-content{max-width:100%}
+  .why h2{font-size:23px}
+  .why p{font-size:9px;max-width:520px}
+  .impact{position:absolute;left:18px;right:18px;bottom:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .impact-card{width:auto;min-height:65px}
+  .quote{display:none}
+}
+
+@media(max-width:390px){
+  .logo-text strong{font-size:13px;letter-spacing:1.5px}
+  .logo-mark{width:30px;height:30px}
+  .get-started{padding:7px 10px;font-size:9px}
+  .hero{min-height:760px}
+  .hero-inner{padding-left:14px;padding-right:14px}
+  .hero h1{font-size:38px}
+  .hero h2{font-size:21px}
+  .hero p{font-size:11px}
+  .hero-buttons{flex-direction:column;align-items:stretch;max-width:270px;margin-left:auto;margin-right:auto}
+  .btn{width:100%}
+  #globe{width:170%;height:500px;right:-35%;top:300px}
+  .cards{grid-template-columns:1fr}
+  .card:nth-child(4),.card:nth-child(5){display:block}
+  .impact{grid-template-columns:1fr;position:relative;left:auto;right:auto;bottom:auto;margin-top:22px}
+  .why{min-height:auto}
+}
+
+@media(max-width:480px){
+  .nav-links{display:none}
+  .signin{display:none}
+  .hero h1{font-size:43px}
+  .hero h2{font-size:23px}
+  .why{min-height:390px}
+}
+</style>
+</head>
+
+<body>
+
+<header class="navbar">
+  <div class="nav-inner">
+
+    <a href="#" class="logo">
+      <div class="logo-mark">
+        <!-- Replace logo.png with your actual Field Shift logo if you have one -->
+        <img src="logo.png" alt="Field Shift logo"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div class="logo-leaf" style="display:none"></div>
+      </div>
+      <div class="logo-text">
+        <strong>FIELD SHIFT</strong>
+        <span>Earth Intelligence for Farmers</span>
+      </div>
+    </a>
+
+    <ul class="nav-links">
+      <li><a class="active" href="#">Home</a></li>
+      <li><a href="#">About</a></li>
+      <li><a href="#">How It Works</a></li>
+      <li><a href="#">Technology</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <span class="theme">☾</span>
+      <a href="#" class="signin">Sign In</a>
+      <a href="#" class="get-started">Get Started →</a>
+    </div>
+
+  </div>
+</header>
+
+<section class="hero">
+
+  <div class="glow"></div>
+
+  <!-- REAL 3D GLOBE -->
+  <div id="globe"></div>
+  <div class="globe-fade"></div>
+
+  <!-- Satellite illustration -->
+  <div class="satellite">
+    <div class="sat-panel left"></div>
+    <div class="sat-panel right"></div>
+    <div class="sat-arm"></div>
+    <div class="sat-body"></div>
+    <div class="sat-antenna"></div>
+  </div>
+
+  <div class="data-card">
+    <h4>Satellite Data</h4>
+    <div><i>●</i> Vegetation Index</div>
+    <div><i>●</i> Temperature</div>
+    <div><i>●</i> Rainfall</div>
+    <div><i>●</i> Soil Moisture</div>
+  </div>
+
+  <!-- Ethiopia is marked directly on the interactive 3D globe -->
+
+  <div class="hero-inner">
+    <div class="hero-copy">
+
+      <h1>FIELD <span class="green">SHIFT</span></h1>
+
+      <h2>AI + NASA Data for<br>Smarter Farming</h2>
+
+      <p>
+        We turn satellite data and AI into simple actionable insights
+        so farmers can make better decisions, protect their crops,
+        and build a more sustainable future.
+      </p>
+
+      <div class="hero-buttons">
+        <a href="#" class="btn btn-primary">Explore Dashboard →</a>
+        <a href="#features" class="btn btn-outline">◉ Explore the Technology</a>
+      </div>
+
+      <div class="trust">
+        <span>● ● ● ● &nbsp; Trusted by farmers in Ethiopia</span>
+        <span class="nasa-badge">
+          <span class="nasa-circle">NASA</span>
+          Powered by NASA
+        </span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="section feature-section" id="features">
+  <div class="feature-layout">
+
+    <div class="feature-intro">
+      <div class="kicker">Key Features</div>
+      <h2>Everything You Need<br>for Smarter Farming</h2>
+      <p>
+        From satellite insights to AI plant analysis, Field Shift gives
+        you the tools to understand your farm, predict risks, and improve yields.
+      </p>
+      <a href="#" class="learn">Learn More →</a>
+    </div>
+
+    <div class="cards">
+
+      <article class="card">
+        <div class="card-top">
+          <div class="card-icon">🛰</div>
+          <h3>Satellite Monitoring</h3>
+          <p>Get real-time data from NASA satellites about your land, weather and crops.</p>
+        </div>
+        <div class="card-visual satellite"></div>
+      </article>
+
+      <article class="card">
+        <div class="card-top">
+          <div class="card-icon">✦</div>
+          <h3>AI Insights</h3>
+          <p>Turn complex data into simple recommendations and early warnings.</p>
+        </div>
+        <div class="card-visual plant"></div>
+      </article>
+
+      <article class="card">
+        <div class="card-top">
+          <div class="card-icon">⌖</div>
+          <h3>Interactive Map</h3>
+          <p>Explore your farm location and see environmental conditions in real time.</p>
+        </div>
+        <div class="card-visual map"></div>
+      </article>
+
+      <article class="card">
+        <div class="card-top">
+          <div class="card-icon">🌿</div>
+          <h3>Plant Analysis</h3>
+          <p>Upload a photo and get AI-powered crop and disease detection.</p>
+        </div>
+        <div class="card-visual leaf"></div>
+      </article>
+
+      <article class="card">
+        <div class="card-top">
+          <div class="card-icon">♧</div>
+          <h3>Early Warnings</h3>
+          <p>Be the first to know about droughts, heat stress, and other risks.</p>
+        </div>
+        <div class="warning-box">
+          <strong>⚠ Possible Water Stress</strong>
+          <span>Rainfall is below normal while vegetation is declining.</span>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section class="why">
+  <div class="why-content">
+    <div class="kicker">Why Ethiopia?</div>
+    <h2>Supporting Ethiopia's<br>Food Security</h2>
+    <p>
+      Ethiopia's farmers face tough challenges — unpredictable weather,
+      limited resources, and climate change. Field Shift brings global
+      space technology and AI to local farms, helping farmers make informed
+      decisions and take action.
+    </p>
+  </div>
+
+  <div class="impact">
+    <div class="impact-card">
+      <b>🌱 Better crop health</b>
+      <span>Higher yields</span>
+    </div>
+    <div class="impact-card">
+      <b>⌁ Reduced losses</b>
+      <span>Early warnings</span>
+    </div>
+    <div class="impact-card">
+      <b>♧ Sustainable farming</b>
+      <span>A greener future</span>
+    </div>
+  </div>
+
+  <div class="quote">
+    “From space to your farm,<br>
+    for a healthier tomorrow.”<br><br>
+    <b style="color:#35e59a">🌿 FIELD SHIFT</b>
+  </div>
+</section>
+
+<script>
+/*
+  REAL 3D EARTH
+  - Earth texture = Blue Marble
+  - Bump map = Earth topography
+  - Centered on Ethiopia
+  - Auto rotates
+*/
+const globeContainer = document.getElementById("globe");
+
+const earthTexture =
+  "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg";
+
+const earthBump =
+  "https://unpkg.com/three-globe/example/img/earth-topology.png";
+
+const world = Globe()(globeContainer)
+  .globeImageUrl(earthTexture)
+  .bumpImageUrl(earthBump)
+  .showAtmosphere(true)
+  .atmosphereColor("#3fc8ff")
+  .atmosphereAltitude(0.16)
+  .backgroundColor("rgba(0,0,0,0)")
+  .width(globeContainer.clientWidth)
+  .height(globeContainer.clientHeight);
+
+/* Lighting */
+const scene = world.scene();
+
+scene.add(new THREE.AmbientLight(0xffffff, 1.7));
+
+const sun = new THREE.DirectionalLight(0xffffff, 2.4);
+sun.position.set(5,3,5);
+scene.add(sun);
+
+/* Ethiopia location */
+world.htmlElementsData([
+  {
+    lat:9.145,
+    lng:40.489673,
+    label:"Ethiopia"
+  }
+]);
+
+world.htmlElement(d => {
+  const el = document.createElement("div");
+  el.innerHTML = "🌿 " + d.label;
+  el.style.cssText = `
+    color:#d8fff0;
+    background:rgba(2,16,23,.82);
+    border:1px solid rgba(53,229,154,.55);
+    padding:5px 9px;
+    border-radius:20px;
+    font:600 10px Inter,Arial;
+    white-space:nowrap;
+    box-shadow:0 0 20px rgba(53,229,154,.22);
+    transform:translate(-50%,-110%);
+    backdrop-filter:blur(8px);
+  `;
+  return el;
+});
+
+/* Start focused on Ethiopia */
+world.pointOfView(
+  {
+    lat:9.145,
+    lng:40.489673,
+    altitude:1.85
+  },
+  0
+);
+
+/* Globe interaction
+   - Drag with mouse/finger to rotate
+   - Auto rotation pauses while the user is dragging
+   - Scroll zoom is disabled so the hero layout stays stable
+*/
+const controls = world.controls();
+controls.enableRotate = true;
+controls.enableZoom = false;
+controls.enablePan = false;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.18;
+controls.rotateSpeed = 0.65;
+controls.dampingFactor = 0.08;
+controls.enableDamping = true;
+
+let draggingGlobe = false;
+
+globeContainer.addEventListener("pointerdown", () => {
+  draggingGlobe = true;
+  controls.autoRotate = false;
+});
+
+window.addEventListener("pointerup", () => {
+  if (draggingGlobe) {
+    draggingGlobe = false;
+    controls.autoRotate = true;
+  }
+});
+
+/* Responsive globe + Ethiopia positioning */
+function resizeGlobe(){
+  const mobile = window.innerWidth < 760;
+
+  world
+    .width(globeContainer.clientWidth)
+    .height(globeContainer.clientHeight);
+
+  world.pointOfView(
+    mobile
+      ? {lat:9.145,lng:40.489673,altitude:2.35}
+      : {lat:9.145,lng:40.489673,altitude:1.62}
+  );
+}
+
+resizeGlobe();
+
+window.addEventListener("resize",resizeGlobe);
+</script>
+
+</body>
+</html>
